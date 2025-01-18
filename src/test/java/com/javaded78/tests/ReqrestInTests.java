@@ -1,5 +1,11 @@
-package com.javaded78;
+package com.javaded78.tests;
 
+import com.javaded78.model.request.CreatedRequestDataModel;
+import com.javaded78.model.request.LoginRequestDataModel;
+import com.javaded78.model.response.RegisteredResponseTestDataModel;
+import com.javaded78.model.response.SingleUserResponseTestDataModel;
+import com.javaded78.model.response.UpdatedResponseTestModel;
+import com.javaded78.model.response.UsersResponseTestDataModel;
 import io.restassured.http.ContentType;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.DisplayName;
@@ -10,10 +16,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ReqrestInTests {
 
@@ -24,14 +27,19 @@ public class ReqrestInTests {
 	@Tag("reqres_in")
 	void checkListUsersStatus() {
 		String endPoint = BASE_URL + "/users?page=2";
-		given()
+
+		UsersResponseTestDataModel model = given()
 				.log().uri()
 				.when()
 				.get(endPoint)
 				.then()
 				.log().status()
 				.log().body()
-				.statusCode(HttpStatus.SC_OK);
+				.statusCode(HttpStatus.SC_OK)
+				.extract().as(UsersResponseTestDataModel.class);
+
+		assertThat(model).isNotNull();
+		assertThat(model.getData()).hasSize(6);
 	}
 
 	@Test
@@ -39,25 +47,21 @@ public class ReqrestInTests {
 	@Tag("reqres_in")
 	void checkSingleUser() {
 		String endPoint = BASE_URL + "/users/2";
-		TestData testData = TestData.builder()
-				.id(2)
-				.email("janet.weaver@reqres.in")
-				.firstName("Janet")
-				.lastName("Weaver")
-				.build();
 
-		given()
+		SingleUserResponseTestDataModel userResponse = given()
 				.log().uri()
 				.when()
 				.get(endPoint)
 				.then()
 				.log().status()
 				.log().body()
-				.body("data.id", equalTo(testData.id()),
-						"data.email", equalTo(testData.email()),
-						"data.first_name", equalTo(testData.firstName()),
-						"data.last_name", equalTo(testData.lastName())
-				);
+				.extract().as(SingleUserResponseTestDataModel.class);
+
+		assertThat(userResponse.getData().getId()).isEqualTo(2);
+		assertThat(userResponse.getData().getEmail()).isEqualTo("janet.weaver@reqres.in");
+		assertThat(userResponse.getData().getFirstname()).isEqualTo("Janet");
+		assertThat(userResponse.getData().getLastname()).isEqualTo("Weaver");
+		assertThat(userResponse.getData().getAvatar()).isEqualTo("https://reqres.in/img/faces/2-image.jpg");
 	}
 
 	@Test
@@ -65,6 +69,7 @@ public class ReqrestInTests {
 	@Tag("reqres_in")
 	void checkResourceNotFoundStatus() {
 		String endPoint = BASE_URL + "/unknown/23";
+
 		given()
 				.log().uri()
 				.when()
@@ -80,49 +85,57 @@ public class ReqrestInTests {
 	public void updateUser() {
 		String endPoint = BASE_URL + "/users/2";
 		String dateTimeNow = getCurrentDate();
-		TestData updateData = TestData.builder()
-				.username("morpheus")
-				.job("zion resident")
-				.updatedAt(dateTimeNow)
+		String job = "zion resident";
+		String name = "morpheus";
+		CreatedRequestDataModel updateRequest = CreatedRequestDataModel.builder()
+				.name(name)
+				.job(job)
 				.build();
 
-		given()
+		UpdatedResponseTestModel updatedResponse = given()
 				.log().uri()
 				.contentType(ContentType.JSON)
-				.body(updateData)
+				.body(updateRequest)
 				.when()
 				.put(endPoint)
 				.then()
 				.log().status()
 				.log().body()
 				.statusCode(HttpStatus.SC_OK)
-				.body("name", is(updateData.username()),
-						"job", is(updateData.job()),
-						"updatedAt", containsString(dateTimeNow));
+				.extract().as(UpdatedResponseTestModel.class);
+
+		assertThat(updatedResponse.getName()).isEqualTo(name);
+		assertThat(updatedResponse.getJob()).isEqualTo(job);
+		assertThat(updatedResponse.getUpdatedAt()).contains(dateTimeNow);
 	}
 
 	@Test
 	@DisplayName("Verify user registration")
 	@Tag("reqres_in")
 	void checkSuccessfulRegisterTest() {
+
 		String endPoint = BASE_URL + "/register";
-		TestData testData = TestData.builder()
-				.email("eve.holt@reqres.in")
-				.password("pistol")
+		String email = "eve.holt@reqres.in";
+		String password = "pistol";
+		LoginRequestDataModel requestData = LoginRequestDataModel.builder()
+				.email(email)
+				.password(password)
 				.build();
 
-		given()
+		RegisteredResponseTestDataModel responseData = given()
 				.log().uri()
 				.contentType(ContentType.JSON)
-				.body(testData)
+				.body(requestData)
 				.when()
 				.post(endPoint)
 				.then()
 				.log().status()
 				.log().body()
 				.statusCode(HttpStatus.SC_OK)
-				.body("token", notNullValue(),
-						"id", notNullValue());
+				.extract().as(RegisteredResponseTestDataModel.class);
+
+		assertThat(responseData.getId()).isNotNull();
+		assertThat(responseData.getId()).isGreaterThan(0);
 	}
 
 	private String getCurrentDate() {

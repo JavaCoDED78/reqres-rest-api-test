@@ -1,8 +1,9 @@
 plugins {
     id 'java-library'
+    id 'io.qameta.allure' version '2.11.2'
 }
 
-group 'qa.guru'
+group 'com.javaded78'
 version '1.0-SNAPSHOT'
 
 
@@ -11,9 +12,12 @@ repositories {
 }
 
 ext {
+    allureVersion = '2.28.0'
     junitVersion = '5.11.4'
     slf4jVersion = '2.0.16'
     assuredVersion = '5.5.0'
+    jacksonVersion = '2.18.2'
+    assertjVersion = '3.27.2'
 }
 
 dependencies {
@@ -21,12 +25,16 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.36'
     testCompileOnly 'org.projectlombok:lombok:1.18.36'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.36'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
 
-    testImplementation (
+    testImplementation(
             "org.junit.jupiter:junit-jupiter:${junitVersion}",
             "org.slf4j:slf4j-simple:${slf4jVersion}",
-            "io.rest-assured:rest-assured:${assuredVersion}")
+            "io.rest-assured:rest-assured:${assuredVersion}",
+            "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}",
+            "org.assertj:assertj-core:${assertjVersion}",
+            "io.qameta.allure:allure-rest-assured:${allureVersion}"
+
+    )
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -37,9 +45,35 @@ test {
     useJUnitPlatform()
 }
 
-tasks.withType(Test).configureEach {
-    systemProperties(System.getProperties())
+allure {
+    version = "${allureVersion}"
+    report {
+        version = "${allureVersion}"
+    }
+    adapter {
+        allureJavaVersion.set("2.28.0")
+        aspectjVersion.set("1.9.22.1")
+        autoconfigureListeners.set(true)
+        aspectjWeaver.set(true)
+        frameworks {
+            junit5 {
+                enabled = true
+                version = "${allureVersion}"
+            }
+        }
+    }
+}
+
+tasks.withType(Test) {
     useJUnitPlatform()
+    systemProperties(System.getProperties())
+
+    testLogging {
+        lifecycle {
+            events "started", "skipped", "failed", "standard_error", "standard_out"
+            exceptionFormat "short"
+        }
+    }
 }
 
 tasks.register('reqres_test', Test) {
