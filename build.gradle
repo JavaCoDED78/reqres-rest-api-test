@@ -1,0 +1,49 @@
+plugins {
+    id 'java-library'
+}
+
+group 'qa.guru'
+version '1.0-SNAPSHOT'
+
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    junitVersion = '5.11.4'
+    slf4jVersion = '2.0.16'
+    assuredVersion = '5.5.0'
+}
+
+dependencies {
+    compileOnly 'org.projectlombok:lombok:1.18.36'
+    annotationProcessor 'org.projectlombok:lombok:1.18.36'
+    testCompileOnly 'org.projectlombok:lombok:1.18.36'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.36'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
+
+    testImplementation (
+            "org.junit.jupiter:junit-jupiter:${junitVersion}",
+            "org.slf4j:slf4j-simple:${slf4jVersion}",
+            "io.rest-assured:rest-assured:${assuredVersion}")
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+tasks.withType(Test).configureEach {
+    systemProperties(System.getProperties())
+    useJUnitPlatform()
+}
+
+tasks.register('reqres_test', Test) {
+    useJUnitPlatform {
+        includeTags("reqres_in")
+    }
+}
