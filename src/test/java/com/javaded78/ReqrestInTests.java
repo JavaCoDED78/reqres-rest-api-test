@@ -1,6 +1,7 @@
 package com.javaded78;
 
 import io.restassured.http.ContentType;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,7 @@ public class ReqrestInTests {
 				.then()
 				.log().status()
 				.log().body()
-				.statusCode(200);
+				.statusCode(HttpStatus.SC_OK);
 	}
 
 	@Test
@@ -70,8 +71,7 @@ public class ReqrestInTests {
 				.get(endPoint)
 				.then()
 				.log().status()
-				.log().body()
-				.statusCode(404);
+				.statusCode(HttpStatus.SC_NOT_FOUND);
 	}
 
 	@Test
@@ -95,7 +95,7 @@ public class ReqrestInTests {
 				.then()
 				.log().status()
 				.log().body()
-				.statusCode(200)
+				.statusCode(HttpStatus.SC_OK)
 				.body("name", is(updateData.username()),
 						"job", is(updateData.job()),
 						"updatedAt", containsString(dateTimeNow));
@@ -120,7 +120,7 @@ public class ReqrestInTests {
 				.then()
 				.log().status()
 				.log().body()
-				.statusCode(200)
+				.statusCode(HttpStatus.SC_OK)
 				.body("token", notNullValue(),
 						"id", notNullValue());
 	}
