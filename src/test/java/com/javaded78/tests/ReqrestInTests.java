@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import static com.javaded78.helpers.CustomAllureListener.withCustomTemplates;
+import static com.javaded78.specs.RegisterSpecs.registerRequestSpec;
+import static com.javaded78.specs.RegisterSpecs.registerResponseSpec;
 import static io.qameta.allure.Allure.step;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -137,9 +139,11 @@ public class ReqrestInTests {
 	@Tag("reqres_in")
 	void checkSuccessfulRegisterTest() {
 
-		String endPoint = BASE_URL + "/register";
+		String endPoint = "/register";
 		String email = "eve.holt@reqres.in";
 		String password = "pistol";
+		String token = "QpwL5tke4Pnpja7X4";
+		Integer id = 4;
 		LoginRequestDataModel requestData = LoginRequestDataModel.builder()
 				.email(email)
 				.password(password)
@@ -147,22 +151,17 @@ public class ReqrestInTests {
 
 		RegisteredResponseTestDataModel responseData =
 				step("Get registration response", () ->
-						given()
-								.filter(withCustomTemplates())
-								.log().uri()
-								.contentType(ContentType.JSON)
+						given(registerRequestSpec)
 								.body(requestData)
 								.when()
 								.post(endPoint)
 								.then()
-								.log().status()
-								.log().body()
-								.statusCode(HttpStatus.SC_OK)
+								.spec(registerResponseSpec)
 								.extract().as(RegisteredResponseTestDataModel.class)
 				);
 		step("Verify registration response", () -> {
-					assertThat(responseData.getId()).isNotNull();
-					assertThat(responseData.getId()).isGreaterThan(0);
+					assertThat(responseData.getToken()).isEqualTo(token);
+					assertThat(responseData.getId()).isEqualTo(id);
 				}
 		);
 	}
