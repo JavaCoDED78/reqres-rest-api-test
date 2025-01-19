@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import static com.javaded78.helpers.CustomAllureListener.withCustomTemplates;
+import static io.qameta.allure.Allure.step;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,40 +30,53 @@ public class ReqrestInTests {
 	void checkListUsersStatus() {
 		String endPoint = BASE_URL + "/users?page=2";
 
-		UsersResponseTestDataModel model = given()
-				.log().uri()
-				.when()
-				.get(endPoint)
-				.then()
-				.log().status()
-				.log().body()
-				.statusCode(HttpStatus.SC_OK)
-				.extract().as(UsersResponseTestDataModel.class);
+		UsersResponseTestDataModel response =
+				step("Get response from existing list of users", () ->
+						given()
+								.filter(withCustomTemplates())
+								.log().uri()
+								.when()
+								.get(endPoint)
+								.then()
+								.log().status()
+								.log().body()
+								.statusCode(HttpStatus.SC_OK)
+								.extract().as(UsersResponseTestDataModel.class));
 
-		assertThat(model).isNotNull();
-		assertThat(model.getData()).hasSize(6);
+		step("Verify response from existing list of users", () -> {
+					assertThat(response).isNotNull();
+					assertThat(response.getData()).hasSize(6);
+				}
+		);
 	}
 
 	@Test
-	@DisplayName("Verify username and email of single user")
+	@DisplayName("Verify response from single user")
 	@Tag("reqres_in")
 	void checkSingleUser() {
 		String endPoint = BASE_URL + "/users/2";
 
-		SingleUserResponseTestDataModel userResponse = given()
-				.log().uri()
-				.when()
-				.get(endPoint)
-				.then()
-				.log().status()
-				.log().body()
-				.extract().as(SingleUserResponseTestDataModel.class);
+		SingleUserResponseTestDataModel userResponse =
+				step("Get response from single user", () ->
+						given()
+								.filter(withCustomTemplates())
+								.log().uri()
+								.when()
+								.get(endPoint)
+								.then()
+								.log().status()
+								.log().body()
+								.extract().as(SingleUserResponseTestDataModel.class)
+				);
 
-		assertThat(userResponse.getData().getId()).isEqualTo(2);
-		assertThat(userResponse.getData().getEmail()).isEqualTo("janet.weaver@reqres.in");
-		assertThat(userResponse.getData().getFirstname()).isEqualTo("Janet");
-		assertThat(userResponse.getData().getLastname()).isEqualTo("Weaver");
-		assertThat(userResponse.getData().getAvatar()).isEqualTo("https://reqres.in/img/faces/2-image.jpg");
+		step("Verify response from single user", () -> {
+					assertThat(userResponse.getData().getId()).isEqualTo(2);
+					assertThat(userResponse.getData().getEmail()).isEqualTo("janet.weaver@reqres.in");
+					assertThat(userResponse.getData().getFirstname()).isEqualTo("Janet");
+					assertThat(userResponse.getData().getLastname()).isEqualTo("Weaver");
+					assertThat(userResponse.getData().getAvatar()).isEqualTo("https://reqres.in/img/faces/2-image.jpg");
+				}
+		);
 	}
 
 	@Test
@@ -70,13 +85,16 @@ public class ReqrestInTests {
 	void checkResourceNotFoundStatus() {
 		String endPoint = BASE_URL + "/unknown/23";
 
-		given()
-				.log().uri()
-				.when()
-				.get(endPoint)
-				.then()
-				.log().status()
-				.statusCode(HttpStatus.SC_NOT_FOUND);
+		step("Verify response status of non existing resource", () ->
+				given()
+						.filter(withCustomTemplates())
+						.log().uri()
+						.when()
+						.get(endPoint)
+						.then()
+						.log().status()
+						.statusCode(HttpStatus.SC_NOT_FOUND)
+		);
 	}
 
 	@Test
@@ -92,21 +110,26 @@ public class ReqrestInTests {
 				.job(job)
 				.build();
 
-		UpdatedResponseTestModel updatedResponse = given()
-				.log().uri()
-				.contentType(ContentType.JSON)
-				.body(updateRequest)
-				.when()
-				.put(endPoint)
-				.then()
-				.log().status()
-				.log().body()
-				.statusCode(HttpStatus.SC_OK)
-				.extract().as(UpdatedResponseTestModel.class);
-
-		assertThat(updatedResponse.getName()).isEqualTo(name);
-		assertThat(updatedResponse.getJob()).isEqualTo(job);
-		assertThat(updatedResponse.getUpdatedAt()).contains(dateTimeNow);
+		UpdatedResponseTestModel updatedResponse =
+				step("Get response after update user", () ->
+						given()
+								.filter(withCustomTemplates())
+								.log().uri()
+								.contentType(ContentType.JSON)
+								.body(updateRequest)
+								.when()
+								.put(endPoint)
+								.then()
+								.log().status()
+								.log().body()
+								.statusCode(HttpStatus.SC_OK)
+								.extract().as(UpdatedResponseTestModel.class)
+				);
+		step("Verify response after update user", () -> {
+			assertThat(updatedResponse.getName()).isEqualTo(name);
+			assertThat(updatedResponse.getJob()).isEqualTo(job);
+			assertThat(updatedResponse.getUpdatedAt()).contains(dateTimeNow);
+		});
 	}
 
 	@Test
@@ -122,20 +145,26 @@ public class ReqrestInTests {
 				.password(password)
 				.build();
 
-		RegisteredResponseTestDataModel responseData = given()
-				.log().uri()
-				.contentType(ContentType.JSON)
-				.body(requestData)
-				.when()
-				.post(endPoint)
-				.then()
-				.log().status()
-				.log().body()
-				.statusCode(HttpStatus.SC_OK)
-				.extract().as(RegisteredResponseTestDataModel.class);
-
-		assertThat(responseData.getId()).isNotNull();
-		assertThat(responseData.getId()).isGreaterThan(0);
+		RegisteredResponseTestDataModel responseData =
+				step("Get registration response", () ->
+						given()
+								.filter(withCustomTemplates())
+								.log().uri()
+								.contentType(ContentType.JSON)
+								.body(requestData)
+								.when()
+								.post(endPoint)
+								.then()
+								.log().status()
+								.log().body()
+								.statusCode(HttpStatus.SC_OK)
+								.extract().as(RegisteredResponseTestDataModel.class)
+				);
+		step("Verify registration response", () -> {
+					assertThat(responseData.getId()).isNotNull();
+					assertThat(responseData.getId()).isGreaterThan(0);
+				}
+		);
 	}
 
 	private String getCurrentDate() {
